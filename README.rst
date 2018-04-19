@@ -126,8 +126,8 @@ To run experiments using Cellular network:
 
       (venv)$ rainman2 --verbose True --episodes 50 Cellular --env_type Dev qlearning_nn
 
-.. image:: rainman2/rainman2/notebooks/cellular_rewards.png
+.. image:: rainman2/notebooks/cellular_rewards.png
 
-.. image:: rainman2/rainman2/notebooks/cellular_handoffs.png
+.. image:: rainman2/notebooks/cellular_handoffs.png
 
-.. image:: rainman2/rainman2/notebooks/cellular_ue_sla.png
+.. image:: rainman2/notebooks/cellular_ue_sla.png
