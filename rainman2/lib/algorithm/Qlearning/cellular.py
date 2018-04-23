@@ -148,7 +148,6 @@ class QlearningForCellular:
             return ACTION(action=0, ap_id=ue.ap, ue_ap_state=None)
         return self.get_next_action_with_neighbors(state, ue)
 
-    @property
     def execute(self):
         """
         Main method to execute Qlearning algorithm

@@ -37,7 +37,6 @@ class QlearningForGeneral:
         # setup logging
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    @property
     def execute(self):
         """
         Main method to execute Qlearning algorithm
