@@ -181,13 +181,12 @@ class CellularNetworkEnv(environment_template.Base):
         self._client = client
 
         # stores information about APs as a dict
-        self._ap_dict = None
+        self._ap_dict = OrderedDict()
         # useful to lookup ap id based on ap location
         self._reverse_ap_lookup = {}
         # Stores information about UEs as a dict
-        self._ue_dict = None
-        self.ue_sla_stats = {}
-        self.ue_iterator = None
+        self._ue_dict = OrderedDict()
+        self.ue_sla_stats = None
 
     def execute_client_call(self, call, *args):
         """
@@ -207,21 +206,20 @@ class CellularNetworkEnv(environment_template.Base):
         """
         Method to parse ap_list and store it as a dictionary
         """
-        ap_dict = OrderedDict()
         for ap in ap_list:
             ap_id = ap['ap_id']
-            location = ap['location']
-            # update reverse ap dict
-            self._reverse_ap_lookup[tuple(location)] = ap_id
-            n_ues = ap['n_ues']
-            ues_meeting_sla = ap['ues_meeting_sla']
-            ap_dict[ap_id] = AP(
-                ap_id=ap_id,
-                location=location,
-                n_ues=n_ues,
-                ues_meeting_sla=ues_meeting_sla,
-            )
-        return ap_dict
+            if ap_id not in self._ap_dict:
+                location = ap['location']
+                # update reverse ap dict
+                self._reverse_ap_lookup[tuple(location)] = ap_id
+                n_ues = ap['n_ues']
+                ues_meeting_sla = ap['ues_meeting_sla']
+                self._ap_dict[ap_id] = AP(
+                    ap_id=ap_id,
+                    location=location,
+                    n_ues=n_ues,
+                    ues_meeting_sla=ues_meeting_sla,
+                )
 
     def populate_ap_dict(self):
         """
@@ -231,40 +229,42 @@ class CellularNetworkEnv(environment_template.Base):
             "Fetching latest AP list from the network!"
         )
         ap_list = self.execute_client_call('get_ap_list')
-        return self.build_ap_dict(ap_list)
+        self.build_ap_dict(ap_list)
 
     def build_ue_dict(self, ue_list):
         """
         Method to parse ue_list and store it as a dictionary
         """
-        ue_dict = OrderedDict()
         self.ue_sla_stats = defaultdict(int)
 
         for ue in ue_list:
             ue_id = ue['ue_id']
-            ap = ue['ap']
-            location = ue['location']
-            ue_app = ue['app']
-            ue_neighboring_aps = ue['neighboring_aps']
             ue_sla = ue['sla']
+
             # Update UE SLA Stats
             if ue_sla == 1:
                 self.ue_sla_stats["Meets"] += 1
             else:
                 self.ue_sla_stats["Doesnot"] += 1
-            neighboring_aps = ue_neighboring_aps
-            ue_signal_power = ue['signal_power']
-            ue_obj = UE(
-                ue_id=ue_id,
-                ap=ap,
-                location=location,
-                neighboring_aps=neighboring_aps,
-                signal_power=ue_signal_power,
-                app=APPS_ID[ue_app],
-                sla=ue_sla,
-            )
-            ue_dict[ue_id] = ue_obj
-        return ue_dict
+
+            # Populate UE dict is UE is new
+            if ue_id not in self._ue_dict:
+                ap = ue['ap']
+                location = ue['location']
+                ue_app = ue['app']
+                ue_neighboring_aps = ue['neighboring_aps']
+                neighboring_aps = ue_neighboring_aps
+                ue_signal_power = ue['signal_power']
+                ue_obj = UE(
+                    ue_id=ue_id,
+                    ap=ap,
+                    location=location,
+                    neighboring_aps=neighboring_aps,
+                    signal_power=ue_signal_power,
+                    app=APPS_ID[ue_app],
+                    sla=ue_sla,
+                )
+                self._ue_dict[ue_id] = ue_obj
 
     def populate_ue_dict(self):
         """
@@ -274,13 +274,7 @@ class CellularNetworkEnv(environment_template.Base):
             "Fetching latest UE list from the network!"
         )
         ue_list = self.execute_client_call('get_ue_list')
-        return self.build_ue_dict(ue_list)
-
-    def get_next_ue(self):
-        """
-        Method to retrieve next UE from the ue_iterator
-        """
-        return next(self.ue_iterator, None)
+        self.build_ue_dict(ue_list)
 
     def get_ue_sla(self, ue_id):
         """
@@ -627,7 +621,7 @@ class CellularNetworkEnv(environment_template.Base):
         Retrive list of all the APs and store them as dictionary
         """
         if not self._ap_dict:
-            self._ap_dict = self.populate_ap_dict()
+            self.populate_ap_dict()
         return self._ap_dict
 
     @property
@@ -636,7 +630,7 @@ class CellularNetworkEnv(environment_template.Base):
         Retrive list of all the UEs and store them as dictionary
         """
         if not self._ue_dict:
-            self._ue_dict = self.populate_ue_dict()
+            self.populate_ue_dict()
         return self._ue_dict
 
     """ Must be implemented """
@@ -662,9 +656,14 @@ class CellularNetworkEnv(environment_template.Base):
         Resets the environment
         """
         self.logger.debug("Resetting the environment!")
-        self._ap_dict = self.populate_ap_dict()
-        self._ue_dict = self.populate_ue_dict()
-        if not self._ue_dict:
+
+        # Fetch latest AP info
+        self.populate_ap_dict()
+
+        # Fetch latest UE info
+        self.populate_ue_dict()
+
+        if not self._ue_dict or not self._ap_dict:
             raise exceptions.ExternalServerError(
                 "Failed while resetting the environment. Check connectivity!")
 

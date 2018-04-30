@@ -117,4 +117,4 @@ class QController(algorithm_template.Base):
         """
         Main method to execute respective Qlearning instance
         """
-        return self.q_instance.execute
+        return self.q_instance.execute()

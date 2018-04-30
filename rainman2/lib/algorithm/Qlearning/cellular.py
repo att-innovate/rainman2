@@ -13,7 +13,7 @@ __date__ = 'Wednesday, April 4th 2018, 11:13:00 am'
 
 CELLULAR_RESULTS = namedtuple(
     'CELLULAR_RESULTS',
-    ['Q', 'Q_ap', 'Rewards', 'Handoffs', 'Meets_SLA'])
+    ['Q', 'Q_ap', 'Rewards', 'Handoffs', 'Meets_SLA', 'UE_AP_LIST'])
 
 ACTION = namedtuple(
     'ACTION', ('action', 'ap_id', 'ue_ap_state'))
@@ -148,7 +148,6 @@ class QlearningForCellular:
             return ACTION(action=0, ap_id=ue.ap, ue_ap_state=None)
         return self.get_next_action_with_neighbors(state, ue)
 
-    @property
     def execute(self):
         """
         Main method to execute Qlearning algorithm
@@ -166,6 +165,9 @@ class QlearningForCellular:
         # UEs meeting their SLAs
         self.ue_sla_stats = np.zeros(self.episodes)
 
+        # UE and AP list for plotting
+        self.ue_ap_list = [[False] for _ in range(self.episodes)]
+
         # Track progress
         progress_bar = progressbar.ProgressBar(
             maxval=self.episodes,
@@ -178,11 +180,15 @@ class QlearningForCellular:
             # get a starting state from the env
             # reset() will fetch latest list of UEs and APs and their stats.
             self.env.reset()
+
+            _ue_ap_list_per_episode = [self.env.ap_dict.value()]
+            _ue_ap_list_per_episode += self.env.ue_dict.values()
+
+            self.ue_ap_list[episode] = _ue_ap_list_per_episode
             self.ue_sla_stats[episode] = self.env.ue_sla_stats["Meets"]
             self.logger.debug("Running episode: {}".format(episode))
 
             for ue_id, ue in self.env.ue_dict.items():
-
                 handoffs = 0
                 self.logger.debug(
                     "#################  New UE: {} ###################".format(
@@ -246,4 +252,5 @@ class QlearningForCellular:
             Q_ap=self.agent.Q_ap,
             Rewards=self.reward_stats,
             Handoffs=self.handoff_stats,
-            Meets_SLA=self.ue_sla_stats)
+            Meets_SLA=self.ue_sla_stats,
+            UE_AP_LIST=self.ue_ap_list)

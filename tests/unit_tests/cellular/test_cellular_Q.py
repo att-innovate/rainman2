@@ -63,5 +63,5 @@ def test_QCellular_execute(QCellular):
     Test execute() method for QlearningForCellular
     """
 
-    results = QCellular.execute
+    results = QCellular.execute()
     assert isinstance(results, cellular.CELLULAR_RESULTS)
