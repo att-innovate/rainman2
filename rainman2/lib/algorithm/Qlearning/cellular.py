@@ -166,7 +166,7 @@ class QlearningForCellular:
         self.ue_sla_stats = np.zeros(self.episodes)
 
         # UE and AP list for plotting
-        self.ue_ap_list = []
+        self.ue_ap_list = [[False] for _ in range(self.episodes)]
 
         # Track progress
         progress_bar = progressbar.ProgressBar(
@@ -181,9 +181,10 @@ class QlearningForCellular:
             # reset() will fetch latest list of UEs and APs and their stats.
             self.env.reset()
 
-            self.ue_ap_list.extend(self.env.ap_dict.values())
-            self.ue_ap_list.extend(self.env.ue_dict.values())
+            _ue_ap_list_per_episode = [self.env.ap_dict.value()]
+            _ue_ap_list_per_episode += self.env.ue_dict.values()
 
+            self.ue_ap_list[episode] = _ue_ap_list_per_episode
             self.ue_sla_stats[episode] = self.env.ue_sla_stats["Meets"]
             self.logger.debug("Running episode: {}".format(episode))
 

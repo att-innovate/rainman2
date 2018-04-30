@@ -86,7 +86,7 @@ To run experiments using Cellular network:
 .. code-block:: bash
 
     (venv)$ rainman2 Cellular --help
-    
+
         Using TensorFlow backend.
         Rainman2's logging has been configured!
         Usage: rainman2 Cellular [OPTIONS] COMMAND [ARGS]...
@@ -125,6 +125,8 @@ To run experiments using Cellular network:
 .. code-block:: bash
 
       (venv)$ rainman2 --verbose True --episodes 50 Cellular --env_type Dev qlearning_nn
+
+.. image:: rainman2/api/static/cellular/network_graph.png
 
 .. image:: rainman2/api/static/cellular/rewards.png
 
